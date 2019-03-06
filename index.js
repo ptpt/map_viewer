@@ -97,7 +97,7 @@ require(['vs/editor/editor.main', 'https://cdnjs.cloudflare.com/ajax/libs/js-yam
     }
 
     try {
-      map.setStyle(style, { 'full': false });
+      map.setStyle(style, { 'full': true });
     } catch (err) {
       console.error(err);
     }
