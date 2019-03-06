@@ -64,18 +64,20 @@ require(['vs/editor/editor.main', 'https://cdnjs.cloudflare.com/ajax/libs/js-yam
   ];
 
   options.transformRequest = (url, resourceType) => {
-    console.log(url);
     for (const request of requests) {
       const regexp = new RegExp(request.url_pattern);
       if (regexp.test(url)) {
-        const ret = {
+        const newRequest = {
           url: request.url ? request.url : url,
-          headers: request.headers,
-          // 'same-origin'|'include'
-          credentials: request.credentials,
         };
-        console.log(ret);
-        return ret;
+        if (request.headers) {
+          newRequest.headers = request.headers;
+        }
+        if (request.credentials) {
+          // 'same-origin'|'include'
+          newRequest.credentials = request.credentials;
+        }
+        return newRequest;
       }
     }
   }
