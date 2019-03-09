@@ -38,30 +38,13 @@ require(['vs/editor/editor.main', 'https://cdnjs.cloudflare.com/ajax/libs/js-yam
 
   mapboxgl.accessToken = 'pk.eyJ1IjoicHQiLCJhIjoiYzNkMDlmYzFkY2FmYjE3Y2E3MTAxNjgwMWE0YTI2ZDcifQ.MQenQX1GtH2UuXkKzLWJag';
 
-  var hashParams = {};
-  if (window.location.hash) {
-    try {
-      hashParams = JSON.parse(decodeURIComponent(window.location.hash.slice(1)));
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
   var options = {
     container: 'map', // container id
     style: 'mapbox://styles/mapbox/streets-v9', //stylesheet location
+    hash: true,
   };
 
-  if (hashParams.center !== undefined) {
-    options.center = hashParams.center;
-  }
-
-  if (hashParams.zoom !== undefined) {
-    options.zoom = hashParams.zoom;
-  }
-
-  var requests = [
-  ];
+  var requests = [];
 
   options.transformRequest = (url, resourceType) => {
     for (const request of requests) {
@@ -84,12 +67,14 @@ require(['vs/editor/editor.main', 'https://cdnjs.cloudflare.com/ajax/libs/js-yam
 
   const map = new mapboxgl.Map(options);
 
+  map.showTileBoundaries = true;
+
   function loadStyle(map) {
     const style = jsyaml.load(editor.getValue());
     if (style === undefined) {
       return;
     }
-  
+
     console.log(style);
 
     if (style.requests) {
@@ -104,20 +89,6 @@ require(['vs/editor/editor.main', 'https://cdnjs.cloudflare.com/ajax/libs/js-yam
       console.error(err);
     }
   }
-
-  const buttonRun = document.getElementById('button-run');
-  buttonRun.onclick = (ev) => {
-    loadStyle(map);
-  };
-
-  map.on('moveend', function () {
-    let center = map.getCenter();
-    hashParams.center = [center.lng, center.lat];
-    hashParams.zoom = map.getZoom();
-    if (hashParams) {
-      window.location.hash = JSON.stringify(hashParams);
-    }
-  });
 
   map.addControl(new MapboxGeocoder({
     accessToken: mapboxgl.accessToken
