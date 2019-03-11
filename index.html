@@ -24,27 +24,30 @@
                 /* border: 1px solid rgba(0,0,0,0.4); */
                 font-family: 'Open Sans', sans-serif;
             }
+            .yaml-error {
+                background: red;
+            }
             #editor-layers {
                 height: 100%;
             }
             #map { 
-                /* position:absolute;
-                top:0; bottom:0; */
                 float: right;
                 width: 70%;
                 height: 100%;
             }
 
-            /* #button-run {
+            #toolbar {
+                height: 25px;
+            }
+
+            #toolbar button {
+                height: 100%;
                 float: right;
-            } */
+            }
         </style>
     </head>
     <body>
         <div id="layer">
-            <div id="toolbar">
-                <button id="button-run">run</button>
-            </div>
             <section id="editor-layers"></section>
         </div>
         <div id='map'></div>

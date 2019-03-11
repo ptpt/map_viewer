@@ -37,11 +37,35 @@ require(['vs/editor/editor.main', 'https://cdnjs.cloudflare.com/ajax/libs/js-yam
   })
 
   mapboxgl.accessToken = 'pk.eyJ1IjoicHQiLCJhIjoiYzNkMDlmYzFkY2FmYjE3Y2E3MTAxNjgwMWE0YTI2ZDcifQ.MQenQX1GtH2UuXkKzLWJag';
+  const defaultStyle = 'mapbox://styles/mapbox/streets-v9' //stylesheet location
+
+  var style;
+  try {
+    style = jsyaml.load(editor.getValue());
+  } catch(err) {
+    var errorDecorations = editor.deltaDecorations([], [
+      {
+        range: new monaco.Range(
+          err.mark.line + 1,
+          err.mark.column + 1,
+          err.mark.line + 2,
+          0
+        ),
+        options: {
+          className: 'yaml-error',
+        }
+      }
+    ]);
+  }
+
+  if (!style) {
+    style = {};
+  }
 
   var options = {
     container: 'map', // container id
-    style: 'mapbox://styles/mapbox/streets-v9', //stylesheet location
     hash: true,
+    style: style.base ? style.base : defaultStyle,
   };
 
   var requests = [];
@@ -65,38 +89,41 @@ require(['vs/editor/editor.main', 'https://cdnjs.cloudflare.com/ajax/libs/js-yam
     }
   }
 
-  const map = new mapboxgl.Map(options);
-
-  map.showTileBoundaries = true;
-
-  function loadStyle(map) {
-    const style = jsyaml.load(editor.getValue());
-    if (style === undefined) {
-      return;
-    }
-
-    console.log(style);
-
-    if (style.requests) {
-      requests = style.requests;
-    } else {
-      requests = [];
-    }
-
-    try {
-      map.setStyle(style, { 'full': true });
-    } catch (err) {
-      console.error(err);
-    }
+  if (style.requests) {
+    requests = style.requests;
+  } else {
+    requests = [];
   }
+
+  const map = new mapboxgl.Map(options);
 
   map.addControl(new MapboxGeocoder({
     accessToken: mapboxgl.accessToken
   }));
-  map.addControl(new mapboxgl.NavigationControl());
-  map.addControl(new mapboxgl.GeolocateControl());
+  map.addControl(new mapboxgl.ScaleControl({
+    maxWidth: 80,
+    unit: 'metric',
+  }));
+
+  map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+  map.addControl(new mapboxgl.GeolocateControl(), 'bottom-right');
+  map.addControl(new mapboxgl.FullscreenControl(), 'bottom-right');
+
+  map.showTileBoundaries = true;
 
   map.on('load', () => {
-    loadStyle(map);
+    const sources = style.sources || [];
+    for (const id in sources) {
+      if (Object.prototype.hasOwnProperty.call(sources, id)) {
+        console.log('adding source:', id, sources[id]);
+        map.addSource(id, sources[id]);
+      }
+    }
+
+    const layers = style.layers || [];
+    for (const layer of layers) {
+      console.log('adding layer', layer)
+      map.addLayer(layer);
+    }
   });
 });
