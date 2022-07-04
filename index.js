@@ -1,7 +1,9 @@
+const monacoEditorVersion = "0.32.1";
+
 require.config({
   paths: {
-    'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.15.6/min/vs'
-  }
+    vs: `https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/${monacoEditorVersion}/min/vs`,
+  },
 });
 
 // Before loading vs/editor/editor.main, define a global MonacoEnvironment that overwrites
@@ -10,65 +12,75 @@ require.config({
 // a web worker through a same-domain script
 window.MonacoEnvironment = {
   getWorkerUrl: function (workerId, label) {
-    return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+    const uri = encodeURIComponent(`
       self.MonacoEnvironment = {
-        baseUrl: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.15.6/min/'
+        baseUrl: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/${monacoEditorVersion}/min/'
       };
-      importScripts('https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.15.6/min/vs/base/worker/workerMain.js');`
-    )}`;
-  }
+      importScripts('https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/${monacoEditorVersion}/min/vs/base/worker/workerMain.js');`);
+    return `data:text/javascript;charset=utf-8,${uri}`;
+  },
 };
 
-require(['vs/editor/editor.main', 'https://cdnjs.cloudflare.com/ajax/libs/js-yaml/3.12.2/js-yaml.min.js'], (monaco, jsyaml) => {
-  const layers = localStorage.getItem('layers');
-  const editor = monaco.editor.create(document.getElementById('editor-layers'), {
-    lineNumbers: "off",
-    value: layers,
-    language: 'yaml',
-    minimap: {
-      'enabled': false,
+require([
+  "vs/editor/editor.main",
+  "https://cdnjs.cloudflare.com/ajax/libs/js-yaml/3.12.2/js-yaml.min.js",
+], (monaco, jsyaml) => {
+  const layers = localStorage.getItem("layers");
+  const editor = monaco.editor.create(
+    document.getElementById("editor-layers"),
+    {
+      lineNumbers: "off",
+      value: layers,
+      language: "yaml",
+      minimap: {
+        enabled: false,
+      },
     }
-  });
+  );
 
   const model = editor.getModel();
 
   model.onDidChangeContent((event) => {
-    localStorage.setItem('layers', editor.getValue());
-  })
+    localStorage.setItem("layers", editor.getValue());
+  });
 
-  mapboxgl.accessToken = 'pk.eyJ1IjoicHQiLCJhIjoiYzNkMDlmYzFkY2FmYjE3Y2E3MTAxNjgwMWE0YTI2ZDcifQ.MQenQX1GtH2UuXkKzLWJag';
-  const defaultStyle = 'mapbox://styles/mapbox/streets-v9' //stylesheet location
+  mapboxgl.accessToken =
+    "pk.eyJ1IjoicHQiLCJhIjoiYzNkMDlmYzFkY2FmYjE3Y2E3MTAxNjgwMWE0YTI2ZDcifQ.MQenQX1GtH2UuXkKzLWJag";
+  const defaultStyle = "mapbox://styles/mapbox/streets-v9"; // stylesheet location
 
-  var style;
+  let style = {};
   try {
     style = jsyaml.load(editor.getValue());
-  } catch(err) {
-    var errorDecorations = editor.deltaDecorations([], [
-      {
-        range: new monaco.Range(
-          err.mark.line + 1,
-          err.mark.column + 1,
-          err.mark.line + 2,
-          0
-        ),
-        options: {
-          className: 'yaml-error',
-        }
-      }
-    ]);
+  } catch (err) {
+    const errorDecorations = editor.deltaDecorations(
+      [],
+      [
+        {
+          range: new monaco.Range(
+            err.mark.line + 1,
+            err.mark.column + 1,
+            err.mark.line + 2,
+            0
+          ),
+          options: {
+            className: "yaml-error",
+          },
+        },
+      ]
+    );
   }
 
   if (!style) {
     style = {};
   }
 
-  var options = {
-    container: 'map', // container id
+  const options = {
+    container: "map", // container id
     hash: true,
     style: style.base ? style.base : defaultStyle,
   };
 
-  var requests = [];
+  let requests = [];
 
   options.transformRequest = (url, resourceType) => {
     for (const request of requests) {
@@ -87,7 +99,7 @@ require(['vs/editor/editor.main', 'https://cdnjs.cloudflare.com/ajax/libs/js-yam
         return newRequest;
       }
     }
-  }
+  };
 
   if (style.requests) {
     requests = style.requests;
@@ -97,32 +109,36 @@ require(['vs/editor/editor.main', 'https://cdnjs.cloudflare.com/ajax/libs/js-yam
 
   const map = new mapboxgl.Map(options);
 
-  map.addControl(new MapboxGeocoder({
-    accessToken: mapboxgl.accessToken
-  }));
-  map.addControl(new mapboxgl.ScaleControl({
-    maxWidth: 80,
-    unit: 'metric',
-  }));
+  map.addControl(
+    new MapboxGeocoder({
+      accessToken: mapboxgl.accessToken,
+    })
+  );
+  map.addControl(
+    new mapboxgl.ScaleControl({
+      maxWidth: 80,
+      unit: "metric",
+    })
+  );
 
-  map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
-  map.addControl(new mapboxgl.GeolocateControl(), 'bottom-right');
-  map.addControl(new mapboxgl.FullscreenControl(), 'bottom-right');
+  map.addControl(new mapboxgl.NavigationControl(), "bottom-right");
+  map.addControl(new mapboxgl.GeolocateControl(), "bottom-right");
+  map.addControl(new mapboxgl.FullscreenControl(), "bottom-right");
 
   map.showTileBoundaries = true;
 
-  map.on('load', () => {
+  map.on("load", () => {
     const sources = style.sources || [];
     for (const id in sources) {
       if (Object.prototype.hasOwnProperty.call(sources, id)) {
-        console.log('adding source:', id, sources[id]);
+        console.log("adding source:", id, sources[id]);
         map.addSource(id, sources[id]);
       }
     }
 
     const layers = style.layers || [];
     for (const layer of layers) {
-      console.log('adding layer', layer)
+      console.log("adding layer", layer);
       map.addLayer(layer);
     }
   });
