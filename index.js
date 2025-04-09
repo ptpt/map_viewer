@@ -1,4 +1,4 @@
-const monacoEditorVersion = "0.32.1";
+const monacoEditorVersion = "0.52.2";
 
 require.config({
   paths: {
@@ -46,7 +46,7 @@ require([
 
   mapboxgl.accessToken =
     "pk.eyJ1IjoicHQiLCJhIjoiYzNkMDlmYzFkY2FmYjE3Y2E3MTAxNjgwMWE0YTI2ZDcifQ.MQenQX1GtH2UuXkKzLWJag";
-  const defaultStyle = "mapbox://styles/mapbox/streets-v9"; // stylesheet location
+  const defaultStyle = "mapbox://styles/mapbox/streets-v12"; // stylesheet location
 
   let style = {};
   try {
@@ -109,11 +109,17 @@ require([
 
   const map = new mapboxgl.Map(options);
 
-  map.addControl(
-    new MapboxGeocoder({
-      accessToken: mapboxgl.accessToken,
-    })
-  );
+  window.addEventListener("load", () => {
+    const geocoder = new MapboxGeocoder();
+    geocoder.accessToken = mapboxgl.accessToken;
+    geocoder.options = {
+      proximity: [-73.99209, 40.68933],
+    };
+    geocoder.marker = true;
+    geocoder.mapboxgl = mapboxgl;
+    map.addControl(geocoder);
+  });
+
   map.addControl(
     new mapboxgl.ScaleControl({
       maxWidth: 80,
